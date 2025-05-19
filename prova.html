@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Finance Crossword</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+      background-color: #f9f9f9;
+      text-align: center;
+    }
+    h2 {
+      margin-top: 0;
+    }
+    #wordList {
+      margin-bottom: 15px;
+    }
+    table {
+      margin: auto;
+      border-collapse: collapse;
+      background-color: white;
+    }
+    td {
+      border: 1px solid #333;
+      width: 40px;
+      height: 40px;
+      text-align: center;
+      vertical-align: middle;
+      font-size: 18px;
+      cursor: pointer;
+      user-select: none;
+    }
+    td.found {
+      background-color: #4caf50;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+
+<h2>🧠 Find These Financial Terms:</h2>
+<div id="wordList"></div>
+<table id="crossword"></table>
+
+<script>
+const words = {
+  "investment": "The act of allocating resources with the expectation of generating profit.",
+  "financing": "Providing funds for business activities or making purchases.",
+  "money": "A medium of exchange that facilitates trade.",
+  "savings": "Money that is not spent and set aside for future use.",
+  "costs": "Expenses required to produce or acquire something.",
+  "revenues": "Income generated from normal business operations.",
+  "market": "A system where buyers and sellers interact to exchange goods or services.",
+  "buying": "The act of acquiring something in exchange for money.",
+  "selling": "The act of offering goods or services for money.",
+  "taxes": "Compulsory financial charges imposed by a government.",
+  "crypto": "Digital currency secured by cryptography.",
+  "income": "Money received, typically on a regular basis, for work or investments.",
+  "inflation": "The rate at which the general level of prices rises.",
+  "interest": "A charge for the use of borrowed money.",
+  "currency": "A system of money in use in a country.",
+  "bank": "A financial institution that accepts deposits and grants loans.",
+  "fairplay": "Acting honestly and following rules, especially in business."
+};
+
+const wordList = Object.keys(words);
+document.getElementById("wordList").innerHTML = wordList.map(w => `🔹 ${w}`).join("<br>");
+
+const gridSize = 20;
+let grid = Array.from({ length: gridSize }, () => Array(gridSize).fill(""));
+let placedWords = [];
+
+// Place words in alternating directions
+function placeWords() {
+  let direction = true; // alternate: horizontal (true), vertical (false)
+  let row = 0, col = 0;
+  let attempts = 0;
+
+  wordList.forEach(word => {
+    word = word.toUpperCase();
+    let placed = false;
+
+    while (!placed && attempts < 1000) {
+      attempts++;
+      row = Math.floor(Math.random() * (gridSize - (direction ? 0 : word.length)));
+      col = Math.floor(Math.random() * (gridSize - (direction ? word.length : 0)));
+
+      let conflict = false;
+      for (let i = 0; i < word.length; i++) {
+        const r = direction ? row : row + i;
+        const c = direction ? col + i : col;
+        const current = grid[r][c];
+        if (current !== "" && current !== word[i]) {
+          conflict = true;
+          break;
+        }
+      }
+
+      if (!conflict) {
+        let positions = [];
+        for (let i = 0; i < word.length; i++) {
+          const r = direction ? row : row + i;
+          const c = direction ? col + i : col;
+          grid[r][c] = word[i];
+          positions.push({ row: r, col: c });
+        }
+        placedWords.push({ word: word.toLowerCase(), positions });
+        placed = true;
+        direction = !direction;
+      }
+    }
+  });
+}
+
+// Fill empty grid spaces with random letters
+function fillGridRandom() {
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  for (let i = 0; i < gridSize; i++) {
+    for (let j = 0; j < gridSize; j++) {
+      if (grid[i][j] === "") {
+        grid[i][j] = alphabet[Math.floor(Math.random() * alphabet.length)];
+      }
+    }
+  }
+}
+
+// Render crossword grid
+function renderGrid() {
+  const table = document.getElementById("crossword");
+  table.innerHTML = "";
+
+  for (let i = 0; i < gridSize; i++) {
+    const tr = document.createElement("tr");
+    for (let j = 0; j < gridSize; j++) {
+      const td = document.createElement("td");
+      td.textContent = grid[i][j];
+      td.dataset.row = i;
+      td.dataset.col = j;
+      td.addEventListener("click", handleCellClick);
+      tr.appendChild(td);
+    }
+    table.appendChild(tr);
+  }
+}
+
+let selected = [];
+let foundWords = [];
+
+function handleCellClick(e) {
+  const td = e.target;
+  td.classList.toggle("found");
+  const key = `${td.dataset.row},${td.dataset.col}`;
+
+  if (selected.includes(key)) {
+    selected = selected.filter(k => k !== key);
+  } else {
+    selected.push(key);
+  }
+
+  checkWordMatches();
+}
+
+function checkWordMatches() {
+  placedWords.forEach(entry => {
+    const word = entry.word;
+    const positions = entry.positions.map(p => `${p.row},${p.col}`);
+    const isFound = positions.every(pos => selected.includes(pos));
+
+    if (isFound && !foundWords.includes(word)) {
+      foundWords.push(word);
+      alert(`✅ You found "${word}"!\n\n📘 ${words[word]}`);
+    }
+  });
+
+  if (foundWords.length === wordList.length) {
+    alert("🎉 Congratulations! You found all the financial terms!");
+  }
+}
+
+// Initialize game
+placeWords();
+fillGridRandom();
+renderGrid();
+</script>
+
+</body>
+</html>

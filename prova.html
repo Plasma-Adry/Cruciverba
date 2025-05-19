@@ -35,6 +35,19 @@
       background-color: #4caf50;
       color: white;
     }
+    button {
+      margin-top: 20px;
+      padding: 10px 15px;
+      font-size: 16px;
+      cursor: pointer;
+      background-color: #4caf50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
   </style>
 </head>
 <body>
@@ -42,6 +55,7 @@
 <h2>🧠 Find These Financial Terms:</h2>
 <div id="wordList"></div>
 <table id="crossword"></table>
+<button onclick="showAllDefinitions()">📘 Show Found Word Definitions</button>
 
 <script>
 const words = {
@@ -73,8 +87,7 @@ let placedWords = [];
 
 // Place words in alternating directions
 function placeWords() {
-  let direction = true; // alternate: horizontal (true), vertical (false)
-  let row = 0, col = 0;
+  let direction = true;
   let attempts = 0;
 
   wordList.forEach(word => {
@@ -83,15 +96,14 @@ function placeWords() {
 
     while (!placed && attempts < 1000) {
       attempts++;
-      row = Math.floor(Math.random() * (gridSize - (direction ? 0 : word.length)));
-      col = Math.floor(Math.random() * (gridSize - (direction ? word.length : 0)));
+      let row = Math.floor(Math.random() * (gridSize - (direction ? 0 : word.length)));
+      let col = Math.floor(Math.random() * (gridSize - (direction ? word.length : 0)));
 
       let conflict = false;
       for (let i = 0; i < word.length; i++) {
         const r = direction ? row : row + i;
         const c = direction ? col + i : col;
-        const current = grid[r][c];
-        if (current !== "" && current !== word[i]) {
+        if (grid[r][c] && grid[r][c] !== word[i]) {
           conflict = true;
           break;
         }
@@ -113,7 +125,7 @@ function placeWords() {
   });
 }
 
-// Fill empty grid spaces with random letters
+// Fill grid with random letters
 function fillGridRandom() {
   const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
   for (let i = 0; i < gridSize; i++) {
@@ -125,7 +137,7 @@ function fillGridRandom() {
   }
 }
 
-// Render crossword grid
+// Render crossword
 function renderGrid() {
   const table = document.getElementById("crossword");
   table.innerHTML = "";
@@ -178,7 +190,18 @@ function checkWordMatches() {
   }
 }
 
-// Initialize game
+// 📘 Show definitions of only found words
+function showAllDefinitions() {
+  if (foundWords.length === 0) {
+    alert("❗You haven't found any words yet.");
+    return;
+  }
+
+  let message = foundWords.map(w => `🔹 ${w}:\n${words[w]}`).join("\n\n");
+  alert("📚 Definitions of found words:\n\n" + message);
+}
+
+// Init
 placeWords();
 fillGridRandom();
 renderGrid();

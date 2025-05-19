@@ -1,23 +1,185 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <title>Home</title>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width" />
-    <!--
-      Need a visual blank slate?
-      Remove all code in `styles.css`!
-    -->
-    <link rel="stylesheet" href="styles.css" />
-    <script type="module" src="script.js"></script>
-  </head>
-  <body>
-    <nav>
-      <a href="/" aria-current="page">Home</a>
-      <a href="/page2.html">Other page</a>
-    </nav>
-    <main>
-      <h1>Home page</h1>
-    </main>
-  </body>
+<head>
+  <meta charset="UTF-8">
+  <title>Finance Crossword</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      background-color: #f9f9f9;
+    }
+    table {
+      border-collapse: collapse;
+      background-color: white;
+    }
+    td {
+      border: 1px solid #333;
+      width: 40px;
+      height: 40px;
+      text-align: center;
+      vertical-align: middle;
+      font-size: 18px;
+      cursor: pointer;
+      user-select: none;
+    }
+    td.found {
+      background-color: #4caf50;
+      color: white;
+    }
+    td:empty {
+      background-color: #f0f0f0;
+      border: none;
+      cursor: default;
+    }
+  </style>
+</head>
+<body>
+
+<table id="crossword"></table>
+
+<script>
+const words = {
+  "investment": "The act of allocating resources with the expectation of generating profit.",
+  "financing": "Providing funds for business activities or making purchases.",
+  "money": "A medium of exchange that facilitates trade.",
+  "savings": "Money that is not spent and set aside for future use.",
+  "costs": "Expenses required to produce or acquire something.",
+  "revenues": "Income generated from normal business operations.",
+  "market": "A system where buyers and sellers interact to exchange goods or services.",
+  "buying": "The act of acquiring something in exchange for money.",
+  "selling": "The act of offering goods or services for money.",
+  "taxes": "Compulsory financial charges imposed by a government.",
+  "crypto": "Digital currency secured by cryptography.",
+  "income": "Money received, typically on a regular basis, for work or investments.",
+  "inflation": "The rate at which the general level of prices rises.",
+  "interest": "A charge for the use of borrowed money.",
+  "currency": "A system of money in use in a country."
+};
+
+const wordList = Object.keys(words);
+const gridSize = 50;
+let rawGrid = Array.from({ length: gridSize }, () => Array(gridSize).fill(''));
+let placedWords = [];
+
+// Place words alternating horizontally and vertically
+function placeWords() {
+  wordList.forEach((word, index) => {
+    const upper = word.toUpperCase();
+    const horizontal = index % 2 === 0;
+    const row = index * 2;
+    const col = 0;
+    let positions = [];
+
+    for (let i = 0; i < upper.length; i++) {
+      const r = horizontal ? row : col + i;
+      const c = horizontal ? col + i : row;
+      rawGrid[r][c] = upper[i];
+      positions.push({ row: r, col: c });
+    }
+
+    placedWords.push({ word, positions });
+  });
+}
+
+// Trim grid to minimum size
+function trimGrid(grid) {
+  let minRow = gridSize, maxRow = 0, minCol = gridSize, maxCol = 0;
+
+  for (let i = 0; i < gridSize; i++) {
+    for (let j = 0; j < gridSize; j++) {
+      if (grid[i][j]) {
+        minRow = Math.min(minRow, i);
+        maxRow = Math.max(maxRow, i);
+        minCol = Math.min(minCol, j);
+        maxCol = Math.max(maxCol, j);
+      }
+    }
+  }
+
+  const trimmed = [];
+  for (let i = minRow; i <= maxRow; i++) {
+    const row = [];
+    for (let j = minCol; j <= maxCol; j++) {
+      row.push(grid[i][j] || '');
+    }
+    trimmed.push(row);
+  }
+
+  return { trimmed, minRow, minCol };
+}
+
+// Render the crossword
+function renderGrid(grid, offsetRow, offsetCol) {
+  const table = document.getElementById("crossword");
+  table.innerHTML = "";
+
+  for (let i = 0; i < grid.length; i++) {
+    const tr = document.createElement("tr");
+    for (let j = 0; j < grid[i].length; j++) {
+      const td = document.createElement("td");
+      td.textContent = grid[i][j];
+      td.dataset.row = i;
+      td.dataset.col = j;
+
+      if (grid[i][j]) {
+        td.addEventListener("click", onCellClick);
+      }
+      tr.appendChild(td);
+    }
+    table.appendChild(tr);
+  }
+
+  // Store offset for later word checking
+  window.gridOffset = { row: offsetRow, col: offsetCol };
+}
+
+let selected = [];
+
+function onCellClick(e) {
+  const cell = e.target;
+  cell.classList.toggle("found");
+  const row = parseInt(cell.dataset.row);
+  const col = parseInt(cell.dataset.col);
+  const key = `${row},${col}`;
+
+  if (selected.includes(key)) {
+    selected = selected.filter(k => k !== key);
+  } else {
+    selected.push(key);
+  }
+
+  checkWords();
+}
+
+function checkWords() {
+  const foundWords = [];
+
+  for (const entry of placedWords) {
+    const offsetPositions = entry.positions.map(p => {
+      return `${p.row - window.gridOffset.row},${p.col - window.gridOffset.col}`;
+    });
+
+    const allFound = offsetPositions.every(pos => selected.includes(pos));
+    if (allFound && !foundWords.includes(entry.word)) {
+      foundWords.push(entry.word);
+    }
+  }
+
+  if (foundWords.length === wordList.length) {
+    let definitions = foundWords.map(w => `<b>${w}</b>: ${words[w]}`).join("<br><br>");
+    alert("🎉 You found all the words!\n\n" + definitions.replace(/<br>/g, '\n'));
+  }
+}
+
+// Run
+placeWords();
+const { trimmed, minRow, minCol } = trimGrid(rawGrid);
+renderGrid(trimmed, minRow, minCol);
+</script>
+
+</body>
 </html>

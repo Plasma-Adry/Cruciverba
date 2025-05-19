@@ -6,13 +6,27 @@
   <style>
     body {
       font-family: sans-serif;
-      display: flex;
-      justify-content: center;
-      align-items: center;
       padding: 20px;
       background-color: #f9f9f9;
+      text-align: center;
+    }
+    h2 {
+      margin-top: 0;
+    }
+    #wordList {
+      margin-bottom: 15px;
+      font-size: 18px;
+      max-width: 90%;
+      margin-left: auto;
+      margin-right: auto;
+      line-height: 2;
+    }
+    .found-word {
+      text-decoration: underline;
+      font-weight: bold;
     }
     table {
+      margin: auto;
       border-collapse: collapse;
       background-color: white;
     }
@@ -30,101 +44,134 @@
       background-color: #4caf50;
       color: white;
     }
-    td:empty {
-      background-color: #f0f0f0;
+    button {
+      margin: 10px 8px;
+      padding: 10px 15px;
+      font-size: 16px;
+      cursor: pointer;
+      background-color: #4caf50;
+      color: white;
       border: none;
-      cursor: default;
+      border-radius: 5px;
+    }
+    button:hover {
+      background-color: #45a049;
     }
   </style>
 </head>
 <body>
 
+<h2>🧠 Find These Financial Terms:</h2>
+<div id="wordList"></div>
 <table id="crossword"></table>
+<button onclick="showAllDefinitions()">📘 Show Found Word Definitions</button>
+<button onclick="showFoundWords()">✅ View Found Words</button>
 
 <script>
 const words = {
-  "investment": "The act of allocating resources with the expectation of generating profit.",
-  "financing": "Providing funds for business activities or making purchases.",
-  "money": "A medium of exchange that facilitates trade.",
-  "savings": "Money that is not spent and set aside for future use.",
-  "costs": "Expenses required to produce or acquire something.",
-  "revenues": "Income generated from normal business operations.",
-  "market": "A system where buyers and sellers interact to exchange goods or services.",
-  "buying": "The act of acquiring something in exchange for money.",
-  "selling": "The act of offering goods or services for money.",
-  "taxes": "Compulsory financial charges imposed by a government.",
-  "crypto": "Digital currency secured by cryptography.",
-  "income": "Money received, typically on a regular basis, for work or investments.",
-  "inflation": "The rate at which the general level of prices rises.",
-  "interest": "A charge for the use of borrowed money.",
-  "currency": "A system of money in use in a country.",
-  "bank": "A financial institution that accepts deposits and grants loans.",
-  "fairplay": "Acting honestly and following rules, especially in business."
+  "investment": "Investment refers to the allocation of money or resources into assets, ventures, or projects with the aim of generating future income or profit",
+  "financing": "Financing involves providing funds for business activities, making purchases, or investing, often through loans, credit, or capital raising",
+  "money": "Money is a universally accepted medium of exchange used to facilitate transactions for goods and services",
+  "savings": "Savings is the portion of income not spent but reserved for future use, typically stored in banks or financial institutions",
+  "costs": "Costs are the monetary valuation of effort, materials, resources, time, and utilities consumed to produce goods or services",
+  "revenues": "Revenues represent the total income a business earns from its normal operations, including the sale of goods or services",
+  "market": "A market is a structure that allows buyers and sellers to exchange any type of goods, services, and information",
+  "buying": "Buying is the act of acquiring goods or services in exchange for money",
+  "selling": "Selling involves offering goods or services to customers in return for payment",
+  "taxes": "Taxes are mandatory financial charges imposed by a government to fund public expenditures and services",
+  "crypto": "Crypto refers to digital or virtual currencies secured by cryptography, often decentralized through blockchain technology",
+  "income": "Income is the money an individual or entity receives regularly from work, investments, or other sources",
+  "inflation": "Inflation is the rate at which the general level of prices for goods and services rises, eroding purchasing power",
+  "interest": "Interest is the cost of borrowing money, expressed as a percentage of the loan amount, typically paid by borrowers to lenders",
+  "currency": "Currency is a system of money in common use within a particular country or economic region",
+  "bank": "A bank is a financial institution licensed to receive deposits, offer loans, and provide various financial services to customers. Banks are the hub of finance in every country thanks to which statistical bodies can collect numerous data and do numerous investigations. In the first link below we report the financial situation of the Vatican State",
+  "fairplay": "Financial Fair Play refers to rules introduced by organizations like UEFA to ensure football clubs operate within their financial means, promoting transparency and long-term stability. To learn what Financial Fair Play is in detail, click on the second link below"
 };
 
 const wordList = Object.keys(words);
+let foundWords = [];
+
+function updateWordListDisplay() {
+  document.getElementById("wordList").innerHTML = wordList.map(w => {
+    return `<span id="word-${w}" class="${foundWords.includes(w) ? 'found-word' : ''}">${foundWords.includes(w) ? `_${w}_` : w}</span>`;
+  }).join(" &nbsp;&nbsp;•&nbsp;&nbsp; ");
+}
+
+updateWordListDisplay();
+
 const gridSize = 20;
-let rawGrid = Array.from({ length: gridSize }, () => Array(gridSize).fill(''));
+let grid = Array.from({ length: gridSize }, () => Array(gridSize).fill(""));
 let placedWords = [];
 
-// Place words in alternating directions in a square layout
 function placeWords() {
-  let row = 0, col = 0;
-  let direction = true; // true = horizontal, false = vertical
-  const spacing = 1;
+  const directions = [
+    { dx: 1, dy: 0 },   // horizontal
+    { dx: 0, dy: 1 },   // vertical
+    { dx: 1, dy: 1 },   // diagonal down
+    { dx: -1, dy: 1 }   // diagonal up
+  ];
 
-  for (let index = 0; index < wordList.length; index++) {
-    const word = wordList[index].toUpperCase();
-    let positions = [];
+  wordList.forEach(word => {
+    word = word.toUpperCase();
+    let placed = false;
+    let attempts = 0;
 
-    if (direction) {
-      // Horizontal
-      if (col + word.length > gridSize) {
-        row += spacing + 1;
-        col = 0;
-      }
+    while (!placed && attempts < 1000) {
+      attempts++;
+      const dir = directions[Math.floor(Math.random() * directions.length)];
+      const maxRow = dir.dy === 1 ? gridSize - word.length : dir.dy === -1 ? word.length - 1 : gridSize;
+      const maxCol = dir.dx === 1 ? gridSize - word.length : dir.dx === -1 ? word.length - 1 : gridSize;
+      const row = Math.floor(Math.random() * maxRow);
+      const col = Math.floor(Math.random() * maxCol);
 
+      let conflict = false;
       for (let i = 0; i < word.length; i++) {
-        rawGrid[row][col + i] = word[i];
-        positions.push({ row: row, col: col + i });
+        const r = row + dir.dy * i;
+        const c = col + dir.dx * i;
+        if (grid[r][c] !== "" && grid[r][c] !== word[i]) {
+          conflict = true;
+          break;
+        }
       }
 
-      row += spacing;
-    } else {
-      // Vertical
-      if (row + word.length > gridSize) {
-        col += spacing + 1;
-        row = 0;
+      if (!conflict) {
+        let positions = [];
+        for (let i = 0; i < word.length; i++) {
+          const r = row + dir.dy * i;
+          const c = col + dir.dx * i;
+          grid[r][c] = word[i];
+          positions.push({ row: r, col: c });
+        }
+        placedWords.push({ word: word.toLowerCase(), positions });
+        placed = true;
       }
-
-      for (let i = 0; i < word.length; i++) {
-        rawGrid[row + i][col] = word[i];
-        positions.push({ row: row + i, col: col });
-      }
-
-      col += spacing;
     }
+  });
+}
 
-    placedWords.push({ word: wordList[index], positions });
-    direction = !direction;
+function fillGridRandom() {
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  for (let i = 0; i < gridSize; i++) {
+    for (let j = 0; j < gridSize; j++) {
+      if (grid[i][j] === "") {
+        grid[i][j] = alphabet[Math.floor(Math.random() * alphabet.length)];
+      }
+    }
   }
 }
 
-function renderGrid(grid) {
+function renderGrid() {
   const table = document.getElementById("crossword");
   table.innerHTML = "";
 
-  for (let i = 0; i < grid.length; i++) {
+  for (let i = 0; i < gridSize; i++) {
     const tr = document.createElement("tr");
-    for (let j = 0; j < grid[i].length; j++) {
+    for (let j = 0; j < gridSize; j++) {
       const td = document.createElement("td");
       td.textContent = grid[i][j];
       td.dataset.row = i;
       td.dataset.col = j;
-
-      if (grid[i][j]) {
-        td.addEventListener("click", onCellClick);
-      }
+      td.addEventListener("click", handleCellClick);
       tr.appendChild(td);
     }
     table.appendChild(tr);
@@ -133,12 +180,10 @@ function renderGrid(grid) {
 
 let selected = [];
 
-function onCellClick(e) {
-  const cell = e.target;
-  cell.classList.toggle("found");
-  const row = cell.dataset.row;
-  const col = cell.dataset.col;
-  const key = `${row},${col}`;
+function handleCellClick(e) {
+  const td = e.target;
+  td.classList.toggle("found");
+  const key = `${td.dataset.row},${td.dataset.col}`;
 
   if (selected.includes(key)) {
     selected = selected.filter(k => k !== key);
@@ -146,29 +191,50 @@ function onCellClick(e) {
     selected.push(key);
   }
 
-  checkWords();
+  checkWordMatches();
 }
 
-function checkWords() {
-  const foundWords = [];
-
-  for (const entry of placedWords) {
+function checkWordMatches() {
+  placedWords.forEach(entry => {
+    const word = entry.word;
     const positions = entry.positions.map(p => `${p.row},${p.col}`);
-    const allFound = positions.every(pos => selected.includes(pos));
-    if (allFound && !foundWords.includes(entry.word)) {
-      foundWords.push(entry.word);
+    const isFound = positions.every(pos => selected.includes(pos));
+
+    if (isFound && !foundWords.includes(word)) {
+      foundWords.push(word);
+      alert(`✅ You found "${word}"!\n\n📘 ${words[word]}`);
+      updateWordListDisplay();
     }
-  }
+  });
 
   if (foundWords.length === wordList.length) {
-    let definitions = foundWords.map(w => `<b>${w}</b>: ${words[w]}`).join("<br><br>");
-    alert("🎉 You found all the words!\n\n" + definitions.replace(/<br>/g, '\n'));
+    alert("🎉 Congratulations! You found all the financial terms!");
   }
 }
 
-// Run setup
+function showAllDefinitions() {
+  if (foundWords.length === 0) {
+    alert("❗You haven't found any words yet.");
+    return;
+  }
+
+  let message = foundWords.map(w => `🔹 ${w}:\n${words[w]}`).join("\n\n");
+  alert("📚 Definitions of Found Words:\n\n" + message);
+}
+
+function showFoundWords() {
+  if (foundWords.length === 0) {
+    alert("❗No words found yet.");
+    return;
+  }
+
+  alert("✅ Words you have found so far:\n\n" + foundWords.map(w => "🔸 " + w).join("\n"));
+}
+
+// Game init
 placeWords();
-renderGrid(rawGrid);
+fillGridRandom();
+renderGrid();
 </script>
 
 </body>

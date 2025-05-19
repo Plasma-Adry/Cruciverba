@@ -57,63 +57,60 @@ const words = {
   "income": "Money received, typically on a regular basis, for work or investments.",
   "inflation": "The rate at which the general level of prices rises.",
   "interest": "A charge for the use of borrowed money.",
-  "currency": "A system of money in use in a country."
+  "currency": "A system of money in use in a country.",
+  "bank": "A financial institution that accepts deposits and grants loans.",
+  "fairplay": "Acting honestly and following rules, especially in business."
 };
 
 const wordList = Object.keys(words);
-const gridSize = 50;
+const gridSize = 20;
 let rawGrid = Array.from({ length: gridSize }, () => Array(gridSize).fill(''));
 let placedWords = [];
 
-// Place words alternating horizontally and vertically
+// Place words in alternating directions in a square layout
 function placeWords() {
-  wordList.forEach((word, index) => {
-    const upper = word.toUpperCase();
-    const horizontal = index % 2 === 0;
-    const row = index * 2;
-    const col = 0;
+  let row = 0, col = 0;
+  let direction = true; // true = horizontal, false = vertical
+  const spacing = 1;
+
+  for (let index = 0; index < wordList.length; index++) {
+    const word = wordList[index].toUpperCase();
     let positions = [];
 
-    for (let i = 0; i < upper.length; i++) {
-      const r = horizontal ? row : col + i;
-      const c = horizontal ? col + i : row;
-      rawGrid[r][c] = upper[i];
-      positions.push({ row: r, col: c });
-    }
-
-    placedWords.push({ word, positions });
-  });
-}
-
-// Trim grid to minimum size
-function trimGrid(grid) {
-  let minRow = gridSize, maxRow = 0, minCol = gridSize, maxCol = 0;
-
-  for (let i = 0; i < gridSize; i++) {
-    for (let j = 0; j < gridSize; j++) {
-      if (grid[i][j]) {
-        minRow = Math.min(minRow, i);
-        maxRow = Math.max(maxRow, i);
-        minCol = Math.min(minCol, j);
-        maxCol = Math.max(maxCol, j);
+    if (direction) {
+      // Horizontal
+      if (col + word.length > gridSize) {
+        row += spacing + 1;
+        col = 0;
       }
-    }
-  }
 
-  const trimmed = [];
-  for (let i = minRow; i <= maxRow; i++) {
-    const row = [];
-    for (let j = minCol; j <= maxCol; j++) {
-      row.push(grid[i][j] || '');
-    }
-    trimmed.push(row);
-  }
+      for (let i = 0; i < word.length; i++) {
+        rawGrid[row][col + i] = word[i];
+        positions.push({ row: row, col: col + i });
+      }
 
-  return { trimmed, minRow, minCol };
+      row += spacing;
+    } else {
+      // Vertical
+      if (row + word.length > gridSize) {
+        col += spacing + 1;
+        row = 0;
+      }
+
+      for (let i = 0; i < word.length; i++) {
+        rawGrid[row + i][col] = word[i];
+        positions.push({ row: row + i, col: col });
+      }
+
+      col += spacing;
+    }
+
+    placedWords.push({ word: wordList[index], positions });
+    direction = !direction;
+  }
 }
 
-// Render the crossword
-function renderGrid(grid, offsetRow, offsetCol) {
+function renderGrid(grid) {
   const table = document.getElementById("crossword");
   table.innerHTML = "";
 
@@ -132,9 +129,6 @@ function renderGrid(grid, offsetRow, offsetCol) {
     }
     table.appendChild(tr);
   }
-
-  // Store offset for later word checking
-  window.gridOffset = { row: offsetRow, col: offsetCol };
 }
 
 let selected = [];
@@ -142,8 +136,8 @@ let selected = [];
 function onCellClick(e) {
   const cell = e.target;
   cell.classList.toggle("found");
-  const row = parseInt(cell.dataset.row);
-  const col = parseInt(cell.dataset.col);
+  const row = cell.dataset.row;
+  const col = cell.dataset.col;
   const key = `${row},${col}`;
 
   if (selected.includes(key)) {
@@ -159,11 +153,8 @@ function checkWords() {
   const foundWords = [];
 
   for (const entry of placedWords) {
-    const offsetPositions = entry.positions.map(p => {
-      return `${p.row - window.gridOffset.row},${p.col - window.gridOffset.col}`;
-    });
-
-    const allFound = offsetPositions.every(pos => selected.includes(pos));
+    const positions = entry.positions.map(p => `${p.row},${p.col}`);
+    const allFound = positions.every(pos => selected.includes(pos));
     if (allFound && !foundWords.includes(entry.word)) {
       foundWords.push(entry.word);
     }
@@ -175,10 +166,9 @@ function checkWords() {
   }
 }
 
-// Run
+// Run setup
 placeWords();
-const { trimmed, minRow, minCol } = trimGrid(rawGrid);
-renderGrid(trimmed, minRow, minCol);
+renderGrid(rawGrid);
 </script>
 
 </body>

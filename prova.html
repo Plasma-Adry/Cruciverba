@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -16,6 +15,10 @@
     }
     #wordList {
       margin-bottom: 15px;
+      font-size: 18px;
+      max-width: 90%;
+      margin-left: auto;
+      margin-right: auto;
     }
     table {
       margin: auto;
@@ -80,31 +83,38 @@ const words = {
 };
 
 const wordList = Object.keys(words);
-document.getElementById("wordList").innerHTML = wordList.map(w => `🔹 ${w}`).join("<br>");
+document.getElementById("wordList").innerHTML = wordList.map(w => `🔹 ${w}`).join(" &nbsp;&nbsp;•&nbsp;&nbsp; ");
 
 const gridSize = 20;
 let grid = Array.from({ length: gridSize }, () => Array(gridSize).fill(""));
 let placedWords = [];
 
-// Place words in alternating directions
 function placeWords() {
-  let direction = true;
-  let attempts = 0;
+  const directions = [
+    { dx: 1, dy: 0 },   // horizontal
+    { dx: 0, dy: 1 },   // vertical
+    { dx: 1, dy: 1 },   // diagonal down
+    { dx: -1, dy: 1 }   // diagonal up
+  ];
 
   wordList.forEach(word => {
     word = word.toUpperCase();
     let placed = false;
+    let attempts = 0;
 
     while (!placed && attempts < 1000) {
       attempts++;
-      let row = Math.floor(Math.random() * (gridSize - (direction ? 0 : word.length)));
-      let col = Math.floor(Math.random() * (gridSize - (direction ? word.length : 0)));
+      const dir = directions[Math.floor(Math.random() * directions.length)];
+      const maxRow = dir.dy === 1 ? gridSize - word.length : dir.dy === -1 ? word.length - 1 : gridSize;
+      const maxCol = dir.dx === 1 ? gridSize - word.length : dir.dx === -1 ? word.length - 1 : gridSize;
+      const row = Math.floor(Math.random() * maxRow);
+      const col = Math.floor(Math.random() * maxCol);
 
       let conflict = false;
       for (let i = 0; i < word.length; i++) {
-        const r = direction ? row : row + i;
-        const c = direction ? col + i : col;
-        if (grid[r][c] && grid[r][c] !== word[i]) {
+        const r = row + dir.dy * i;
+        const c = col + dir.dx * i;
+        if (grid[r][c] !== "" && grid[r][c] !== word[i]) {
           conflict = true;
           break;
         }
@@ -113,20 +123,18 @@ function placeWords() {
       if (!conflict) {
         let positions = [];
         for (let i = 0; i < word.length; i++) {
-          const r = direction ? row : row + i;
-          const c = direction ? col + i : col;
+          const r = row + dir.dy * i;
+          const c = col + dir.dx * i;
           grid[r][c] = word[i];
           positions.push({ row: r, col: c });
         }
         placedWords.push({ word: word.toLowerCase(), positions });
         placed = true;
-        direction = !direction;
       }
     }
   });
 }
 
-// Fill grid with random letters
 function fillGridRandom() {
   const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
   for (let i = 0; i < gridSize; i++) {
@@ -138,7 +146,6 @@ function fillGridRandom() {
   }
 }
 
-// Render crossword
 function renderGrid() {
   const table = document.getElementById("crossword");
   table.innerHTML = "";
@@ -191,7 +198,6 @@ function checkWordMatches() {
   }
 }
 
-// 📘 Show definitions of only found words
 function showAllDefinitions() {
   if (foundWords.length === 0) {
     alert("❗You haven't found any words yet.");
@@ -202,7 +208,7 @@ function showAllDefinitions() {
   alert("📚 Definitions of found words:\n\n" + message);
 }
 
-// Init
+// Initialize
 placeWords();
 fillGridRandom();
 renderGrid();

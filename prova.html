@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -20,6 +19,11 @@
       max-width: 90%;
       margin-left: auto;
       margin-right: auto;
+      line-height: 2;
+    }
+    .found-word {
+      text-decoration: underline;
+      font-weight: bold;
     }
     table {
       margin: auto;
@@ -41,7 +45,7 @@
       color: white;
     }
     button {
-      margin-top: 20px;
+      margin: 10px 8px;
       padding: 10px 15px;
       font-size: 16px;
       cursor: pointer;
@@ -61,30 +65,39 @@
 <div id="wordList"></div>
 <table id="crossword"></table>
 <button onclick="showAllDefinitions()">📘 Show Found Word Definitions</button>
+<button onclick="showFoundWords()">✅ View Found Words</button>
 
 <script>
 const words = {
-  "investment": "The act of allocating resources with the expectation of generating profit.",
-  "financing": "Providing funds for business activities or making purchases.",
-  "money": "A medium of exchange that facilitates trade.",
-  "savings": "Money that is not spent and set aside for future use.",
-  "costs": "Expenses required to produce or acquire something.",
-  "revenues": "Income generated from normal business operations.",
-  "market": "A system where buyers and sellers interact to exchange goods or services.",
-  "buying": "The act of acquiring something in exchange for money.",
-  "selling": "The act of offering goods or services for money.",
-  "taxes": "Compulsory financial charges imposed by a government.",
-  "crypto": "Digital currency secured by cryptography.",
-  "income": "Money received, typically on a regular basis, for work or investments.",
-  "inflation": "The rate at which the general level of prices rises.",
-  "interest": "A charge for the use of borrowed money.",
-  "currency": "A system of money in use in a country.",
-  "bank": "A financial institution that accepts deposits and grants loans.",
-  "fairplay": "Acting honestly and following rules, especially in business."
+  "investment": "Investment refers to the allocation of money or resources into assets, ventures, or projects with the aim of generating future income or profit. (Investimento: allocazione di denaro o risorse in attività per generare reddito futuro)",
+  "financing": "Financing involves providing funds for business activities, making purchases, or investing, often through loans, credit, or capital raising. (Finanziamento: fornitura di fondi per attività aziendali, acquisti o investimenti)",
+  "money": "Money is a universally accepted medium of exchange used to facilitate transactions for goods and services. (Denaro: mezzo di scambio accettato universalmente)",
+  "savings": "Savings is the portion of income not spent but reserved for future use, typically stored in banks or financial institutions. (Risparmio: parte del reddito non spesa e conservata per il futuro)",
+  "costs": "Costs are the monetary valuation of effort, materials, resources, time, and utilities consumed to produce goods or services. (Costi: valore monetario di risorse usate per produrre beni o servizi)",
+  "revenues": "Revenues represent the total income a business earns from its normal operations, including the sale of goods or services. (Entrate: reddito totale guadagnato da un'azienda)",
+  "market": "A market is a structure that allows buyers and sellers to exchange any type of goods, services, and information. (Mercato: struttura per lo scambio di beni e servizi)",
+  "buying": "Buying is the act of acquiring goods or services in exchange for money. (Acquisto: atto di ottenere beni o servizi in cambio di denaro)",
+  "selling": "Selling involves offering goods or services to customers in return for payment. (Vendita: offerta di beni o servizi in cambio di pagamento)",
+  "taxes": "Taxes are mandatory financial charges imposed by a government to fund public expenditures and services. (Tasse: oneri finanziari imposti dal governo)",
+  "crypto": "Crypto refers to digital or virtual currencies secured by cryptography, often decentralized through blockchain technology. (Criptovalute: valute digitali basate su crittografia)",
+  "income": "Income is the money an individual or entity receives regularly from work, investments, or other sources. (Reddito: denaro ricevuto regolarmente)",
+  "inflation": "Inflation is the rate at which the general level of prices for goods and services rises, eroding purchasing power. (Inflazione: aumento generale dei prezzi)",
+  "interest": "Interest is the cost of borrowing money, expressed as a percentage of the loan amount, typically paid by borrowers to lenders. (Interesse: costo del denaro preso in prestito)",
+  "currency": "Currency is a system of money in common use within a particular country or economic region. (Valuta: sistema monetario di un paese)",
+  "bank": "A bank is a financial institution licensed to receive deposits, offer loans, and provide various financial services to customers. (Banca: istituto che gestisce depositi e prestiti)",
+  "fairplay": "Financial Fair Play refers to rules introduced by organizations like UEFA to ensure football clubs operate within their financial means, promoting transparency and long-term stability. (Fair Play Finanziario: regole per garantire sostenibilità finanziaria nei club sportivi)"
 };
 
 const wordList = Object.keys(words);
-document.getElementById("wordList").innerHTML = wordList.map(w => `🔹 ${w}`).join(" &nbsp;&nbsp;•&nbsp;&nbsp; ");
+let foundWords = [];
+
+function updateWordListDisplay() {
+  document.getElementById("wordList").innerHTML = wordList.map(w => {
+    return `<span id="word-${w}" class="${foundWords.includes(w) ? 'found-word' : ''}">${foundWords.includes(w) ? `_${w}_` : w}</span>`;
+  }).join(" &nbsp;&nbsp;•&nbsp;&nbsp; ");
+}
+
+updateWordListDisplay();
 
 const gridSize = 20;
 let grid = Array.from({ length: gridSize }, () => Array(gridSize).fill(""));
@@ -166,7 +179,6 @@ function renderGrid() {
 }
 
 let selected = [];
-let foundWords = [];
 
 function handleCellClick(e) {
   const td = e.target;
@@ -191,6 +203,7 @@ function checkWordMatches() {
     if (isFound && !foundWords.includes(word)) {
       foundWords.push(word);
       alert(`✅ You found "${word}"!\n\n📘 ${words[word]}`);
+      updateWordListDisplay();
     }
   });
 
@@ -206,10 +219,19 @@ function showAllDefinitions() {
   }
 
   let message = foundWords.map(w => `🔹 ${w}:\n${words[w]}`).join("\n\n");
-  alert("📚 Definitions of found words:\n\n" + message);
+  alert("📚 Definitions of Found Words:\n\n" + message);
 }
 
-// Initialize
+function showFoundWords() {
+  if (foundWords.length === 0) {
+    alert("❗No words found yet.");
+    return;
+  }
+
+  alert("✅ Words you have found so far:\n\n" + foundWords.map(w => "🔸 " + w).join("\n"));
+}
+
+// Game init
 placeWords();
 fillGridRandom();
 renderGrid();
